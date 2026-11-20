@@ -78,8 +78,8 @@ header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:1
 .sheet h2 .x{margin-left:auto}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes fade{from{opacity:0}}
-label.f{display:block;margin-bottom:12px}
-label.f>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+label.f,div.f{display:block;margin-bottom:12px}
+label.f>span,div.f>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
 .in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px}
 .in:focus{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);border-color:transparent}
 textarea.in{min-height:64px;resize:vertical}
@@ -420,26 +420,26 @@ function modForm(existing){
   let catTouched = !!existing;
   const html = `
     <h2>${existing ? 'Edit mod' : 'Add a mod'}<button class="icon x" data-close aria-label="Close">✕</button></h2>
-    <label class="f"><span>Product link</span>
+    <div class="f"><span>Product link</span>
       <div class="row"><input class="in" id="f-url" type="url" inputmode="url" placeholder="Paste the link from the vendor's site" value="${esc(m.url)}">
       ${existing && safeUrl(m.url) ? `<a class="btn sm" href="${esc(m.url)}" target="_blank" rel="noopener">Open ↗</a>` : ''}</div>
       <div class="hint" id="f-urlhint">We'll fill in the vendor, a name and a category guess from the link. Check them, then add the price.</div>
-    </label>
+    </div>
     <label class="f"><span>Part name</span><input class="in" id="f-name" placeholder="e.g. Track brake pads, front" value="${esc(m.name)}"></label>
     <div class="row">
       <label class="f" style="flex:1"><span>Vendor</span><input class="in" id="f-vendor" placeholder="Who sells it" value="${esc(m.vendor && m.vendor.name)}"></label>
       <label class="f" style="width:130px"><span>Price ($)</span><input class="in" id="f-price" inputmode="decimal" placeholder="0" value="${m.price ?? ''}"></label>
     </div>
     <div class="hint" id="f-pricehint" style="margin:-6px 0 12px"></div>
-    <label class="f"><span>Category <em id="f-catsug" style="font-style:normal;color:var(--accent2)"></em></span>
-      <div class="chips" id="f-cats" style="flex-wrap:wrap;padding:0"></div></label>
-    <label class="f"><span>Happiness rating: how much will you love it?</span>
-      <div class="starpick" id="f-stars"></div></label>
+    <div class="f"><span>Category <em id="f-catsug" style="font-style:normal;color:var(--accent2)"></em></span>
+      <div class="chips" id="f-cats" style="flex-wrap:wrap;padding:0"></div></div>
+    <div class="f"><span>Happiness rating: how much will you love it?</span>
+      <div class="starpick" id="f-stars"></div></div>
     <div class="gaugebox" id="f-gauge"></div>
-    <label class="f"><span>Other vendors that sell it</span>
+    <div class="f"><span>Other vendors that sell it</span>
       <div id="f-offers"></div>
       <button type="button" class="btn sm" id="f-addoffer">+ Add another vendor</button>
-    </label>
+    </div>
     <label class="f"><span>Review summary</span><textarea class="in" id="f-review" placeholder="What reviewers say, in a sentence">${esc(m.reviewSummary)}</textarea></label>
     <label class="f"><span>Notes</span><textarea class="in" id="f-notes" placeholder="Fitment, part numbers, install plans…">${esc(m.notes)}</textarea></label>
     <label class="f"><span>Photo link (optional)</span><input class="in" id="f-thumb" type="url" placeholder="Right-click/long-press the product photo → copy image address" value="${esc(m.thumbUrl)}">
@@ -452,9 +452,13 @@ function modForm(existing){
   openSheet(html, (el, close) => {
     const g = id => el.querySelector('#'+id);
     const drawCats = () => {
+      const have = $$('[data-c]', g('f-cats'));
+      if (have.length) { have.forEach(x => x.classList.toggle('off', x.dataset.c !== m.category)); return; }
       g('f-cats').innerHTML = CATS.map(c => `<button type="button" class="chip ${m.category===c.id?'':'off'}" data-c="${c.id}" style="--c:${c.color}">${c.label}</button>`).join('');
     };
     const drawStars = () => {
+      const have = $$('[data-s]', g('f-stars'));
+      if (have.length) { have.forEach(x => x.classList.toggle('on', +x.dataset.s <= m.joy)); return; }
       let s = ''; for (let i=1;i<=5;i++) s += `<button type="button" class="${i<=m.joy?'on':''}" data-s="${i}" aria-label="${i} star${i>1?'s':''}">★</button>`;
       g('f-stars').innerHTML = s;
     };
@@ -505,8 +509,8 @@ function modForm(existing){
     g('f-name').addEventListener('input', sugCat);
     g('f-price').addEventListener('input', () => { drawGauge(); drawPriceHint(); });
     g('f-thumb').addEventListener('change', thumbPrev);
-    g('f-cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; m.category = b.dataset.c; catTouched = true; drawCats(); g('f-catsug').textContent=''; });
-    g('f-stars').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; const s = +b.dataset.s; m.joy = (m.joy === s) ? s - 1 : s; drawStars(); drawGauge(); });
+    g('f-cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; e.preventDefault(); m.category = b.dataset.c; catTouched = true; drawCats(); g('f-catsug').textContent=''; });
+    g('f-stars').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; e.preventDefault(); const s = +b.dataset.s; m.joy = (m.joy === s) ? s - 1 : s; drawStars(); drawGauge(); });
     g('f-addoffer').addEventListener('click', () => { g('f-offers').insertAdjacentHTML('beforeend', offerRow({vendor:'',price:null,url:''})); $$('.o-v', g('f-offers')).pop().focus(); });
     g('f-offers').addEventListener('click', e => { if (e.target.closest('.rm')) { e.target.closest('.offer').remove(); drawGauge(); } });
     g('f-offers').addEventListener('input', drawGauge);
