@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Modlist">
+<meta name="description" content="Modlist: save, prioritize and price the mods you want for your car.">
+<title>Modlist</title>
+<style>
+:root{
+  --bg:#0e1014; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --text:#eef0f4; --muted:#9aa1ae; --accent:#ff4d2e; --accent2:#ff7a1a;
+  --good:#2ecc71; --mid:#f5c542; --bad:#ff4d4d; --radius:14px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{max-width:640px;margin:0 auto;padding:0 14px calc(96px + var(--safe-b))}
+header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 0 10px;background:linear-gradient(var(--bg) 80%,transparent)}
+.brand{font-weight:900;letter-spacing:.06em;font-size:20px;font-style:italic}
+.brand span{color:var(--accent)}
+.car-select{margin-left:auto;display:flex;align-items:center;gap:6px;max-width:58%;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car-select b{overflow:hidden;text-overflow:ellipsis}
+.icon{background:var(--panel);border:1px solid var(--line);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;font-size:18px;flex:none}
+.totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:4px 0 12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.stat .v{font-size:19px;font-weight:800}
+.stat .l{font-size:12px;color:var(--muted)}
+.stat.hi .v{color:var(--accent2)}
+.tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:10px}
+.tabs button{flex:1;border:0;background:none;padding:8px;border-radius:999px;color:var(--muted);font-weight:600}
+.tabs button.on{background:var(--panel2);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.controls select{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex:none}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px}
+.chips::-webkit-scrollbar{display:none}
+.chip{--c:#888;flex:none;border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--text);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip.off{background:transparent;border-color:var(--line);color:var(--muted)}
+.chip.sm{padding:2px 8px;font-size:11.5px}
+.sub{font-size:13px;color:var(--muted);margin:-4px 0 10px}
+.card{display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:9px}
+.card:active{background:var(--panel2)}
+.rank{font-weight:800;color:var(--muted);font-size:13px;width:16px;text-align:center;flex:none}
+.thumb{width:62px;height:62px;border-radius:10px;flex:none;background:var(--panel2);display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:22px;color:var(--c,#888)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.body{flex:1;min-width:0}
+.body h3{margin:0 0 3px;font-size:15px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.price{margin-top:4px;font-weight:800;font-size:16px}
+.price small{font-weight:500;color:var(--muted);font-size:12px}
+.delta{font-size:12px;font-weight:700;margin-left:4px}
+.delta.down{color:var(--good)} .delta.up{color:var(--bad)}
+.stars{color:#ffc93d;font-size:13px;letter-spacing:1px}
+.stars .e{color:#454b57}
+.side{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
+.reorder{display:flex;flex-direction:column;gap:4px}
+.reorder button{width:34px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);font-size:13px}
+.reorder button:disabled{opacity:.3}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.empty h2{color:var(--text);margin:0 0 6px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--panel2);border:1px solid var(--line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{background:transparent;border-color:#5a2a2a;color:#ff7373}
+.btn.block{width:100%}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:10px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + var(--safe-b));z-index:6;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;padding:14px 26px;font-size:16px;box-shadow:0 8px 30px rgba(255,77,46,.35)}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.sheet{background:var(--panel);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:6px 16px calc(20px + var(--safe-b));border:1px solid var(--line);border-bottom:0;animation:up .2s ease-out}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:6px auto 8px}
+.sheet h2{margin:4px 0 12px;font-size:19px;display:flex;align-items:center;gap:8px}
+.sheet h2 .x{margin-left:auto}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}}
+label.f{display:block;margin-bottom:12px}
+label.f>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.in{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px}
+.in:focus{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);border-color:transparent}
+textarea.in{min-height:64px;resize:vertical}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.starpick{display:flex;gap:4px}
+.starpick button{background:none;border:0;font-size:30px;line-height:1;padding:2px;color:#454b57}
+.starpick button.on{color:#ffc93d}
+.gaugebox{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.gaugebox b{display:block}
+.offer{display:grid;grid-template-columns:1fr 92px 34px;gap:6px;margin-bottom:6px}
+.offer .url{grid-column:1/3}
+.offer .rm{grid-row:1/3;grid-column:3;border:1px solid var(--line);background:var(--panel2);border-radius:10px}
+.offer + .offer{border-top:1px dashed var(--line);padding-top:8px}
+.check{display:flex;align-items:center;gap:10px;padding:10px 0;font-weight:600}
+.check input{width:22px;height:22px;accent-color:var(--accent)}
+.menu button{display:flex;width:100%;text-align:left;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:8px}
+.menu button small{display:block;color:var(--muted);font-size:12.5px}
+.carrow{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.carrow.on{border-color:var(--accent)}
+.carrow .n{flex:1;min-width:0}
+.carrow .n small{display:block;color:var(--muted)}
+.link{color:var(--accent2);text-decoration:none;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);background:#2b303b;border:1px solid var(--line);padding:10px 16px;border-radius:999px;z-index:40;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.4);animation:fade .2s}
+.banner{background:#3a2a12;border:1px solid #6b4a17;color:#ffd79a;font-size:13px;border-radius:12px;padding:9px 12px;margin-bottom:10px}
+.imgprev{width:100%;max-height:160px;object-fit:contain;border-radius:10px;background:var(--bg);margin-top:6px;display:none}
+.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:22px}
+.foot a{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">MOD<span>LIST</span></div>
+    <button class="car-select" id="carBtn" aria-label="Choose car"><span>🏎️</span><b id="carName">Add a car</b><span>▾</span></button>
+    <button class="icon" id="menuBtn" aria-label="Menu">⋯</button>
+  </header>
+  <div id="storageBanner"></div>
+  <section class="totals" id="totals"></section>
+  <nav class="tabs" id="tabs">
+    <button data-tab="wish">Wishlist</button>
+    <button data-tab="bought">Purchased</button>
+  </nav>
+  <div class="controls">
+    <select id="sort" aria-label="Sort">
+      <option value="priority">My priority</option>
+      <option value="value">Best joy for the money</option>
+      <option value="joy">Happiness rating</option>
+      <option value="price-asc">Price: low to high</option>
+      <option value="price-desc">Price: high to low</option>
+      <option value="category">Category</option>
+    </select>
+    <div class="chips" id="catFilter" style="padding:0"></div>
+  </div>
+  <div id="subtotal"></div>
+  <main id="list"></main>
+  <div class="foot">Your list is saved in this browser on this device. Use ⋯ → Back up to keep a copy.</div>
+</div>
+<button class="fab" id="addBtn">+ Add mod</button>
+
+<script>
+(function(){
+'use strict';
+const KEY = 'modlist.v1';
+
+// ---------- domain ----------
+const CATS = [
+  {id:'power',      label:'Powertrain', color:'#ff7a1a'},
+  {id:'handling',   label:'Handling',   color:'#3d8bff'},
+  {id:'braking',    label:'Braking',    color:'#ff3b4e'},
+  {id:'aero',       label:'Aero',       color:'#1fc7b6'},
+  {id:'durability', label:'Durability', color:'#a3b86b'},
+  {id:'looks',      label:'Visual',     color:'#b77dff'},
+];
+const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+
+const CAT_KEYWORDS = {
+  braking:    ['brake','rotor','pad','caliper'],
+  handling:   ['coilover','spring','sway','tire','tyre','wheel','bushing'],
+  power:      ['exhaust','intake','tune','turbo','intercooler','downpipe'],
+  aero:       ['lip','splitter','wing','spoiler','diffuser','canard'],
+  durability: ['cooler','radiator','baffle','mount','skid'],
+  looks:      ['carbon','mirror','grille','badge','wrap','light','trim'],
+};
+function suggestCategory(text){
+  const t = String(text || '').toLowerCase();
+  for (const [cat, words] of Object.entries(CAT_KEYWORDS)) {
+    if (words.some(w => new RegExp('\\b' + w).test(t))) return cat;
+  }
+  return null;
+}
+
+// "Joy for the money" gauge. Price is square-root scaled; guardrails keep
+// big-joy mods out of red and low-joy mods out of green.
+const VALUE_BANDS = { low: 1.0, high: 2.0 };
+function joyValue(joy, price){
+  if (!(price > 0)) return { score: 0, band: 'low' };
+  let score = joy / Math.sqrt(price / 100);
+  let guardrail;
+  if (joy >= 4 && score < VALUE_BANDS.low) { score = VALUE_BANDS.low; guardrail = 'floor'; }
+  if (joy <= 1 && score >= VALUE_BANDS.high) { score = VALUE_BANDS.high - 0.01; guardrail = 'cap'; }
+  const band = score < VALUE_BANDS.low ? 'low' : score < VALUE_BANDS.high ? 'medium' : 'high';
+  return { score, band, guardrail };
+}
+window.__modlist = { joyValue, suggestCategory }; // for testing
+
+const KNOWN_VENDORS = {
+  'turnermotorsport.com':'Turner Motorsport','fcpeuro.com':'FCP Euro','ecstuning.com':'ECS Tuning',
+  'bimmerworld.com':'BimmerWorld','amazon.com':'Amazon','ebay.com':'eBay','tirerack.com':'Tire Rack',
+  'summitracing.com':'Summit Racing','pelicanparts.com':'Pelican Parts','suncoastparts.com':'Suncoast Porsche Parts',
+  'vividracing.com':'Vivid Racing','modbargains.com':'ModBargains','rmseuro.com':'RMS Euro',
+  'jegs.com':'JEGS','rockauto.com':'RockAuto','fcpgroton.com':'FCP Euro','apexwheels.com':'Apex Wheels',
+  'essexparts.com':'Essex Parts','racingbrake.com':'RacingBrake','stoptech.com':'StopTech',
+  'mapperformance.com':'MAPerformance','titanmotorsports.com':'Titan Motorsports','performancebyie.com':'IE',
+  'stratosphereparts.com':'Stratosphere','bavauto.com':'Bavarian Autosport','walmart.com':'Walmart'
+};
+function hostOf(url){
+  try { return new URL(url).hostname.replace(/^www\./,'').toLowerCase(); } catch(e){ return ''; }
+}
+function vendorFromUrl(url){
+  const host = hostOf(url);
+  if (!host) return null;
+  const base = Object.keys(KNOWN_VENDORS).find(h => host === h || host.endsWith('.' + h));
+  if (base) return { name: KNOWN_VENDORS[base], host };
+  const parts = host.split('.');
+  const core = parts.length > 2 ? parts[parts.length-2] : parts[0];
+  return { name: core.charAt(0).toUpperCase() + core.slice(1), host };
+}
+function nameFromUrl(url){
+  let u; try { u = new URL(url); } catch(e){ return ''; }
+  const segs = u.pathname.split('/').filter(Boolean).map(s => { try { return decodeURIComponent(s); } catch(e){ return s; } });
+  if (!segs.length) return '';
+  const dp = segs.indexOf('dp');                 // amazon: /Name-Words/dp/ASIN
+  let seg = dp > 0 ? segs[dp-1] : null;
+  if (!seg) {
+    const generic = /^(products?|p|item|itm|shop|catalog|parts?|collections|dp|gp|en|us|[a-z]{2}-[a-z]{2})$/i;
+    const candidates = segs.filter(s => !generic.test(s) && /[a-z]/i.test(s) && /[-_ ]/.test(s));
+    seg = candidates.length ? candidates[candidates.length-1] : '';
+  }
+  seg = seg.replace(/\.(html?|php|aspx?)$/i,'').replace(/[-_+]+/g,' ').replace(/\b\d{5,}\b/g,'').replace(/\s+/g,' ').trim();
+  if (!seg) return '';
+  return seg.split(' ').map(w => w.length <= 3 && /\d/.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// ---------- storage ----------
+let storageOk = true, memCopy = null;
+function blank(){ return { version:1, cars:[], carId:null, mods:[], ui:{ tab:'wish', sort:'priority', cat:'all' } }; }
+function load(){
+  try {
+    const s = localStorage.getItem(KEY);
+    if (!s) return null;
+    const d = JSON.parse(s);
+    if (!d || !Array.isArray(d.mods) || !Array.isArray(d.cars)) return null;
+    d.ui = Object.assign(blank().ui, d.ui || {});
+    return d;
+  } catch(e){ storageOk = false; return memCopy; }
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ storageOk = false; memCopy = state; renderBanner(); }
+}
+let state = load() || blank();
+
+// ---------- helpers ----------
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const money = n => (n == null || isNaN(n)) ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: (Number(n) % 1) ? 2 : 0, maximumFractionDigits: 2 });
+const num = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g,'')); return isNaN(n) ? null : n; };
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
+function toast(msg){
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
+}
+function currentCar(){ return state.cars.find(c => c.id === state.carId) || null; }
+function carLabel(c){ return c.nickname || [c.year, c.make, c.model].filter(Boolean).join(' ') || 'My car'; }
+function bestPrice(m){
+  const all = [m.price].concat((m.offers || []).map(o => o.price)).filter(p => p > 0);
+  return all.length ? Math.min.apply(null, all) : (m.price || 0);
+}
+function bestSource(m){
+  const bp = bestPrice(m);
+  if (m.price > 0 && m.price === bp) return m.vendor && m.vendor.name;
+  const o = (m.offers || []).find(o => o.price === bp);
+  return o ? o.vendor : (m.vendor && m.vendor.name);
+}
+function starsHtml(j){ let s=''; for (let i=1;i<=5;i++) s += i <= j ? '★' : '<span class="e">★</span>'; return s; }
+
+function gaugeSvg(joy, price, size){
+  size = size || 56;
+  const v = joyValue(joy, price);
+  const max = 3, t = Math.min(v.score, max) / max;
+  const cx = 50, cy = 50, r = 38;
+  const p = tt => { const th = Math.PI * (1 - tt); return [cx + r*Math.cos(th), cy - r*Math.sin(th)]; };
+  const arc = (a,b,c) => { const [x1,y1]=p(a),[x2,y2]=p(b); return `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}" stroke="${c}" stroke-width="11" fill="none"/>`; };
+  const th = Math.PI * (1 - t), nx = cx + (r-6)*Math.cos(th), ny = cy - (r-6)*Math.sin(th);
+  const dim = !(price > 0) || !joy;
+  return `<svg width="${size}" height="${size*0.62}" viewBox="0 0 100 62" aria-label="Joy for the money: ${v.band}" style="opacity:${dim?0.35:1}">
+    ${arc(0,1/3,'#ff4d4d')}${arc(1/3+0.01,2/3,'#f5c542')}${arc(2/3+0.01,1,'#2ecc71')}
+    ${dim?'':`<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="#eef0f4" stroke-width="4" stroke-linecap="round"/>`}
+    <circle cx="${cx}" cy="${cy}" r="5" fill="#eef0f4"/></svg>`;
+}
+const BAND_TEXT = { high:'Great joy for the money', medium:'Fair joy for the money', low:'Pricey for the joy' };
+
+// ---------- render ----------
+function visibleMods(){
+  const u = state.ui;
+  let list = state.mods.filter(m => m.carId === state.carId && (u.tab === 'wish' ? !m.purchased : m.purchased));
+  if (u.cat !== 'all') list = list.filter(m => m.category === u.cat);
+  const byPri = (a,b) => a.priority - b.priority;
+  const sorts = {
+    'priority':  byPri,
+    'value':     (a,b) => joyValue(b.joy, bestPrice(b)).score - joyValue(a.joy, bestPrice(a)).score || byPri(a,b),
+    'joy':       (a,b) => b.joy - a.joy || byPri(a,b),
+    'price-asc': (a,b) => bestPrice(a) - bestPrice(b) || byPri(a,b),
+    'price-desc':(a,b) => bestPrice(b) - bestPrice(a) || byPri(a,b),
+    'category':  (a,b) => CATS.findIndex(c=>c.id===a.category) - CATS.findIndex(c=>c.id===b.category) || byPri(a,b),
+  };
+  if (u.tab === 'bought' && u.sort === 'priority') return list.sort((a,b) => (b.purchasedAt||'').localeCompare(a.purchasedAt||''));
+  return list.sort(sorts[u.sort] || byPri);
+}
+
+function renderBanner(){
+  $('#storageBanner').innerHTML = storageOk ? '' :
+    '<div class="banner">This browser is blocking saved data here, so your list will be lost when you close the page. Use ⋯ → Back up, or open Modlist in its own tab.</div>';
+}
+
+function render(){
+  const car = currentCar();
+  $('#carName').textContent = car ? carLabel(car) : 'Add a car';
+  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === state.ui.tab));
+  $('#sort').value = state.ui.sort;
+  $('#sort').options[0].textContent = state.ui.tab === 'bought' ? 'Most recent' : 'My priority';
+
+  // totals for this car
+  const carMods = state.mods.filter(m => car && m.carId === car.id);
+  const wish = carMods.filter(m => !m.purchased), bought = carMods.filter(m => m.purchased);
+  const wishTotal = wish.reduce((s,m) => s + bestPrice(m), 0);
+  const spent = bought.reduce((s,m) => s + (m.paidPrice || m.price || 0), 0);
+  $('#totals').innerHTML = `
+    <div class="stat hi"><div class="v">${money(wishTotal)}</div><div class="l">Wishlist total</div></div>
+    <div class="stat"><div class="v">${wish.length}</div><div class="l">Mods to buy</div></div>
+    <div class="stat"><div class="v">${money(spent)}</div><div class="l">Spent so far</div></div>`;
+
+  // category chips
+  const counts = {}; carMods.filter(m => state.ui.tab==='wish' ? !m.purchased : m.purchased).forEach(m => counts[m.category] = (counts[m.category]||0)+1);
+  $('#catFilter').innerHTML = `<button class="chip ${state.ui.cat==='all'?'':'off'}" data-cat="all" style="--c:#888">All</button>` +
+    CATS.map(c => `<button class="chip ${state.ui.cat===c.id?'':'off'}" data-cat="${c.id}" style="--c:${c.color}">${c.label}${counts[c.id]?' '+counts[c.id]:''}</button>`).join('');
+
+  const list = visibleMods();
+  if (state.ui.cat !== 'all' && list.length) {
+    const sub = list.reduce((s,m) => s + bestPrice(m), 0);
+    $('#subtotal').innerHTML = `<div class="sub">${esc(CAT[state.ui.cat].label)}: ${list.length} mod${list.length>1?'s':''}, ${money(sub)}</div>`;
+  } else $('#subtotal').innerHTML = '';
+
+  const main = $('#list');
+  if (!car) {
+    main.innerHTML = `<div class="empty"><h2>Start your garage</h2><p>Add your car, then save the mods you're eyeing: where to buy them, what they cost and how much you'll love them.</p>
+      <p><button class="btn primary" data-act="addcar">Add your car</button></p>
+      <p><button class="btn sm" data-act="sample">Or try it with a sample list</button></p></div>`;
+    $('#addBtn').style.display = 'none';
+    return;
+  }
+  $('#addBtn').style.display = '';
+  if (!list.length) {
+    main.innerHTML = state.ui.tab === 'wish'
+      ? `<div class="empty"><h2>No mods ${state.ui.cat==='all'?'yet':'in '+esc(CAT[state.ui.cat].label)}</h2><p>Found a part you want? Tap <b>+ Add mod</b> and paste the link.</p></div>`
+      : `<div class="empty"><h2>Nothing purchased yet</h2><p>When you buy a mod, open it and tick “Purchased”.</p></div>`;
+    return;
+  }
+  const canMove = state.ui.tab === 'wish' && state.ui.sort === 'priority';
+  main.innerHTML = list.map((m, i) => {
+    const c = CAT[m.category] || CATS[0];
+    const bp = bestPrice(m);
+    const nOff = (m.offers||[]).filter(o => o.price > 0).length;
+    const delta = (m.addedPrice > 0 && m.price > 0) ? m.price - m.addedPrice : 0;
+    const thumb = safeUrl(m.thumbUrl) ? `<img src="${esc(m.thumbUrl)}" alt="" loading="lazy" onerror="this.remove()">` : esc(c.label[0]);
+    return `<article class="card" data-id="${m.id}">
+      ${canMove ? `<div class="rank">${i+1}</div>` : ''}
+      <div class="thumb" style="--c:${c.color}">${thumb}</div>
+      <div class="body">
+        <h3>${esc(m.name || 'Untitled mod')}</h3>
+        <div class="meta"><span class="chip sm" style="--c:${c.color}">${esc(c.label)}</span>${esc(bestSource(m) || '')}</div>
+        <div class="stars">${starsHtml(m.joy)}</div>
+        <div class="price">${m.purchased ? money(m.paidPrice || m.price) : money(bp)}
+          ${!m.purchased && nOff ? `<small>best of ${nOff+1} vendors</small>` : ''}
+          ${!m.purchased && delta ? `<span class="delta ${delta<0?'down':'up'}">${delta<0?'▼':'▲'}${money(Math.abs(delta))}</span>` : ''}
+        </div>
+      </div>
+      <div class="side">
+        ${m.purchased ? '' : gaugeSvg(m.joy, bp, 52)}
+        ${canMove ? `<div class="reorder"><button data-move="-1" aria-label="Move up" ${i===0?'disabled':''}>▲</button><button data-move="1" aria-label="Move down" ${i===list.length-1?'disabled':''}>▼</button></div>` : ''}
+      </div>
+    </article>`;
+  }).join('');
+}
+
+// ---------- actions ----------
+function move(id, dir){
+  const list = visibleMods();
+  const i = list.findIndex(m => m.id === id), j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  const a = list[i], b = list[j];
+  const t = a.priority; a.priority = b.priority; b.priority = t;
+  if (a.priority === b.priority) { a.priority += dir * 0.5; }
+  normalize(); save(); render();
+}
+function normalize(){
+  state.cars.forEach(c => {
+    state.mods.filter(m => m.carId === c.id).sort((a,b) => a.priority - b.priority).forEach((m,i) => m.priority = i);
+  });
+}
+
+// ---------- sheets ----------
+function openSheet(html, onMount){
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim';
+  scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  const close = () => { scrim.remove(); document.body.style.overflow=''; };
+  scrim.addEventListener('click', e => { if (e.target === scrim || e.target.closest('[data-close]')) close(); });
+  document.body.appendChild(scrim); document.body.style.overflow='hidden';
+  if (onMount) onMount(scrim.querySelector('.sheet'), close);
+  return close;
+}
+
+function modForm(existing){
+  const m = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id: uid(), carId: state.carId, name:'', url:'', vendor:{name:'',host:''}, price:null, addedPrice:null,
+    category:null, joy:3, priority: Math.max(-1, ...state.mods.filter(x=>x.carId===state.carId).map(x=>x.priority)) + 1,
+    purchased:false, thumbUrl:'', reviewSummary:'', notes:'', offers:[], addedAt:new Date().toISOString()
+  };
+  let catTouched = !!existing;
+  const html = `
+    <h2>${existing ? 'Edit mod' : 'Add a mod'}<button class="icon x" data-close aria-label="Close">✕</button></h2>
+    <label class="f"><span>Product link</span>
+      <div class="row"><input class="in" id="f-url" type="url" inputmode="url" placeholder="Paste the link from the vendor's site" value="${esc(m.url)}">
+      ${existing && safeUrl(m.url) ? `<a class="btn sm" href="${esc(m.url)}" target="_blank" rel="noopener">Open ↗</a>` : ''}</div>
+      <div class="hint" id="f-urlhint">We'll fill in the vendor, a name and a category guess from the link. Check them, then add the price.</div>
+    </label>
+    <label class="f"><span>Part name</span><input class="in" id="f-name" placeholder="e.g. Track brake pads, front" value="${esc(m.name)}"></label>
+    <div class="row">
+      <label class="f" style="flex:1"><span>Vendor</span><input class="in" id="f-vendor" placeholder="Who sells it" value="${esc(m.vendor && m.vendor.name)}"></label>
+      <label class="f" style="width:130px"><span>Price ($)</span><input class="in" id="f-price" inputmode="decimal" placeholder="0" value="${m.price ?? ''}"></label>
+    </div>
+    <div class="hint" id="f-pricehint" style="margin:-6px 0 12px"></div>
+    <label class="f"><span>Category <em id="f-catsug" style="font-style:normal;color:var(--accent2)"></em></span>
+      <div class="chips" id="f-cats" style="flex-wrap:wrap;padding:0"></div></label>
+    <label class="f"><span>Happiness rating: how much will you love it?</span>
+      <div class="starpick" id="f-stars"></div></label>
+    <div class="gaugebox" id="f-gauge"></div>
+    <label class="f"><span>Other vendors that sell it</span>
+      <div id="f-offers"></div>
+      <button type="button" class="btn sm" id="f-addoffer">+ Add another vendor</button>
+    </label>
+    <label class="f"><span>Review summary</span><textarea class="in" id="f-review" placeholder="What reviewers say, in a sentence">${esc(m.reviewSummary)}</textarea></label>
+    <label class="f"><span>Notes</span><textarea class="in" id="f-notes" placeholder="Fitment, part numbers, install plans…">${esc(m.notes)}</textarea></label>
+    <label class="f"><span>Photo link (optional)</span><input class="in" id="f-thumb" type="url" placeholder="Right-click/long-press the product photo → copy image address" value="${esc(m.thumbUrl)}">
+      <img class="imgprev" id="f-thumbprev" alt=""></label>
+    <label class="check"><input type="checkbox" id="f-bought" ${m.purchased?'checked':''}> Purchased</label>
+    <label class="f" id="f-paidwrap" style="display:${m.purchased?'block':'none'}"><span>What I paid ($)</span><input class="in" id="f-paid" inputmode="decimal" value="${m.paidPrice ?? ''}"></label>
+    <button class="btn primary block" id="f-save">${existing ? 'Save changes' : 'Add to list'}</button>
+    ${existing ? '<div style="height:10px"></div><button class="btn danger block" id="f-del">Delete this mod</button>' : ''}
+  `;
+  openSheet(html, (el, close) => {
+    const g = id => el.querySelector('#'+id);
+    const drawCats = () => {
+      g('f-cats').innerHTML = CATS.map(c => `<button type="button" class="chip ${m.category===c.id?'':'off'}" data-c="${c.id}" style="--c:${c.color}">${c.label}</button>`).join('');
+    };
+    const drawStars = () => {
+      let s = ''; for (let i=1;i<=5;i++) s += `<button type="button" class="${i<=m.joy?'on':''}" data-s="${i}" aria-label="${i} star${i>1?'s':''}">★</button>`;
+      g('f-stars').innerHTML = s;
+    };
+    const drawGauge = () => {
+      const price = bestPrice({ price: num(g('f-price').value), offers: readOffers() });
+      const v = joyValue(m.joy, price);
+      g('f-gauge').innerHTML = gaugeSvg(m.joy, price, 70) + `<div><b>${price > 0 && m.joy ? BAND_TEXT[v.band] : 'Joy for the money'}</b>
+        <span class="hint">${price > 0 && m.joy ? `Score ${v.score.toFixed(2)}${v.guardrail==='floor'?' · held out of the red because you rated it 4+ stars':''}${v.guardrail==='cap'?' · held out of the green because you rated it 1 star or less':''}` : 'Add a price and a rating to see the gauge.'}</span></div>`;
+    };
+    const drawPriceHint = () => {
+      const p = num(g('f-price').value);
+      g('f-pricehint').textContent = (existing && m.addedPrice > 0 && p > 0 && p !== m.addedPrice)
+        ? `Was ${money(m.addedPrice)} when you added it (${p < m.addedPrice ? 'down' : 'up'} ${money(Math.abs(p - m.addedPrice))}).` : '';
+    };
+    const offerRow = o => `<div class="offer">
+        <input class="in o-v" placeholder="Vendor" value="${esc(o.vendor)}">
+        <input class="in o-p" inputmode="decimal" placeholder="$" value="${o.price ?? ''}">
+        <button type="button" class="rm" aria-label="Remove vendor">✕</button>
+        <input class="in o-u url" type="url" placeholder="Link (optional)" value="${esc(o.url)}">
+      </div>`;
+    const readOffers = () => $$('.offer', g('f-offers')).map(r => ({
+      vendor: r.querySelector('.o-v').value.trim(), price: num(r.querySelector('.o-p').value), url: r.querySelector('.o-u').value.trim()
+    })).filter(o => o.vendor || o.price || o.url);
+    g('f-offers').innerHTML = (m.offers||[]).map(offerRow).join('');
+    const thumbPrev = () => { const u = safeUrl(g('f-thumb').value.trim()); const im = g('f-thumbprev'); if (u) { im.src = u; im.style.display='block'; im.onerror = () => im.style.display='none'; } else im.style.display='none'; };
+
+    const fromLink = () => {
+      const url = g('f-url').value.trim();
+      if (!safeUrl(url)) return;
+      const v = vendorFromUrl(url);
+      if (v && !g('f-vendor').value.trim()) g('f-vendor').value = v.name;
+      const nm = nameFromUrl(url);
+      if (nm && !g('f-name').value.trim()) g('f-name').value = nm;
+      sugCat();
+      if (/amazon\.|ebay\./i.test(url)) g('f-urlhint').textContent = 'Got it. Amazon and eBay pages can\'t be read automatically, so check the name and add the price.';
+    };
+    const sugCat = () => {
+      const s = suggestCategory(g('f-name').value + ' ' + g('f-url').value);
+      g('f-catsug').textContent = s && s !== m.category ? `· suggested: ${CAT[s].label}` : '';
+      if (s && !catTouched) { m.category = s; drawCats(); g('f-catsug').textContent = '· suggested'; }
+    };
+
+    drawCats(); drawStars(); drawGauge(); thumbPrev(); drawPriceHint();
+    if (!existing) setTimeout(() => g('f-url').focus(), 250);
+
+    g('f-url').addEventListener('change', fromLink);
+    g('f-url').addEventListener('paste', () => setTimeout(fromLink, 0));
+    g('f-name').addEventListener('input', sugCat);
+    g('f-price').addEventListener('input', () => { drawGauge(); drawPriceHint(); });
+    g('f-thumb').addEventListener('change', thumbPrev);
+    g('f-cats').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; m.category = b.dataset.c; catTouched = true; drawCats(); g('f-catsug').textContent=''; });
+    g('f-stars').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b) return; const s = +b.dataset.s; m.joy = (m.joy === s) ? s - 1 : s; drawStars(); drawGauge(); });
+    g('f-addoffer').addEventListener('click', () => { g('f-offers').insertAdjacentHTML('beforeend', offerRow({vendor:'',price:null,url:''})); $$('.o-v', g('f-offers')).pop().focus(); });
+    g('f-offers').addEventListener('click', e => { if (e.target.closest('.rm')) { e.target.closest('.offer').remove(); drawGauge(); } });
+    g('f-offers').addEventListener('input', drawGauge);
+    g('f-bought').addEventListener('change', () => { g('f-paidwrap').style.display = g('f-bought').checked ? 'block' : 'none'; if (g('f-bought').checked && !g('f-paid').value) { const bp = bestPrice({price:num(g('f-price').value), offers:readOffers()}); if (bp) g('f-paid').value = bp; } });
+
+    g('f-save').addEventListener('click', () => {
+      const name = g('f-name').value.trim();
+      if (!name) { g('f-name').focus(); toast('Give the part a name'); return; }
+      const url = g('f-url').value.trim();
+      const vname = g('f-vendor').value.trim();
+      m.name = name; m.url = url;
+      m.vendor = { name: vname, host: hostOf(url) };
+      m.price = num(g('f-price').value);
+      if (m.addedPrice == null && m.price) m.addedPrice = m.price;
+      if (!m.category) m.category = suggestCategory(name + ' ' + url) || 'looks';
+      m.offers = readOffers();
+      m.reviewSummary = g('f-review').value.trim();
+      m.notes = g('f-notes').value.trim();
+      m.thumbUrl = g('f-thumb').value.trim();
+      const wasBought = m.purchased;
+      m.purchased = g('f-bought').checked;
+      m.paidPrice = m.purchased ? num(g('f-paid').value) : null;
+      if (m.purchased && !wasBought) m.purchasedAt = new Date().toISOString();
+      if (!m.purchased) m.purchasedAt = null;
+      const i = state.mods.findIndex(x => x.id === m.id);
+      if (i >= 0) state.mods[i] = m; else state.mods.push(m);
+      normalize(); save(); close(); render();
+      toast(existing ? 'Saved' : 'Added to your list');
+    });
+    if (existing) g('f-del').addEventListener('click', () => {
+      if (!confirm('Delete “' + m.name + '”?')) return;
+      state.mods = state.mods.filter(x => x.id !== m.id); normalize(); save(); close(); render(); toast('Deleted');
+    });
+  });
+}
+
+function carForm(existing){
+  const c = existing ? Object.assign({}, existing) : { id: uid(), nickname:'', year:'', make:'', model:'' };
+  openSheet(`
+    <h2>${existing ? 'Edit car' : 'Add a car'}<button class="icon x" data-close aria-label="Close">✕</button></h2>
+    <div class="row">
+      <label class="f" style="width:96px"><span>Year</span><input class="in" id="c-year" inputmode="numeric" placeholder="2018" value="${esc(c.year)}"></label>
+      <label class="f" style="flex:1"><span>Make</span><input class="in" id="c-make" placeholder="BMW" value="${esc(c.make)}"></label>
+    </div>
+    <label class="f"><span>Model</span><input class="in" id="c-model" placeholder="M2 (F87)" value="${esc(c.model)}"></label>
+    <label class="f"><span>Nickname (optional)</span><input class="in" id="c-nick" placeholder="Track car" value="${esc(c.nickname)}"></label>
+    <button class="btn primary block" id="c-save">${existing ? 'Save' : 'Add car'}</button>
+    ${existing ? '<div style="height:10px"></div><button class="btn danger block" id="c-del">Delete car and its mods</button>' : ''}
+  `, (el, close) => {
+    setTimeout(() => el.querySelector('#c-year').focus(), 250);
+    el.querySelector('#c-save').addEventListener('click', () => {
+      c.year = el.querySelector('#c-year').value.trim(); c.make = el.querySelector('#c-make').value.trim();
+      c.model = el.querySelector('#c-model').value.trim(); c.nickname = el.querySelector('#c-nick').value.trim();
+      if (!c.make && !c.model && !c.nickname) { toast('Add a make, model or nickname'); return; }
+      const i = state.cars.findIndex(x => x.id === c.id);
+      if (i >= 0) state.cars[i] = c; else state.cars.push(c);
+      state.carId = c.id; save(); close(); render();
+    });
+    if (existing) el.querySelector('#c-del').addEventListener('click', () => {
+      const n = state.mods.filter(m => m.carId === c.id).length;
+      if (!confirm(`Delete ${carLabel(c)}${n ? ' and its ' + n + ' mod' + (n>1?'s':'') : ''}?`)) return;
+      state.cars = state.cars.filter(x => x.id !== c.id);
+      state.mods = state.mods.filter(m => m.carId !== c.id);
+      state.carId = state.cars[0] ? state.cars[0].id : null;
+      save(); close(); render();
+    });
+  });
+}
+
+function garageSheet(){
+  const rows = state.cars.map(c => {
+    const ms = state.mods.filter(m => m.carId === c.id && !m.purchased);
+    return `<div class="carrow ${c.id===state.carId?'on':''}" data-car="${c.id}">
+      <div class="n"><b>${esc(carLabel(c))}</b><small>${ms.length} mod${ms.length===1?'':'s'} · ${money(ms.reduce((s,m)=>s+bestPrice(m),0))}</small></div>
+      <button class="btn sm" data-editcar="${c.id}">Edit</button></div>`;
+  }).join('');
+  openSheet(`<h2>Garage<button class="icon x" data-close aria-label="Close">✕</button></h2>${rows || '<p class="hint">No cars yet.</p>'}
+    <button class="btn block" id="g-add">+ Add a car</button>`, (el, close) => {
+    el.addEventListener('click', e => {
+      const ed = e.target.closest('[data-editcar]');
+      if (ed) { close(); carForm(state.cars.find(c => c.id === ed.dataset.editcar)); return; }
+      const row = e.target.closest('[data-car]');
+      if (row) { state.carId = row.dataset.car; state.ui.cat = 'all'; save(); close(); render(); }
+    });
+    el.querySelector('#g-add').addEventListener('click', () => { close(); carForm(); });
+  });
+}
+
+function listAsText(){
+  const car = currentCar(); if (!car) return '';
+  const ms = state.mods.filter(m => m.carId === car.id && !m.purchased).sort((a,b)=>a.priority-b.priority);
+  const lines = ms.map((m,i) => `${i+1}. ${m.name} (${(CAT[m.category]||{}).label}) ${money(bestPrice(m))}${bestSource(m)?' at '+bestSource(m):''}${m.joy?' '+'★'.repeat(m.joy):''}${m.url?'\n   '+m.url:''}`);
+  return `${carLabel(car)} mod list\n\n${lines.join('\n')}\n\nTotal: ${money(ms.reduce((s,m)=>s+bestPrice(m),0))}`;
+}
+
+function menuSheet(){
+  openSheet(`<h2>Menu<button class="icon x" data-close aria-label="Close">✕</button></h2>
+    <div class="menu">
+      <button data-m="garage">🏁<span>Garage<small>Switch, add or edit cars</small></span></button>
+      <button data-m="copy">📋<span>Copy my list<small>Paste it into a text or forum post</small></span></button>
+      <button data-m="export">💾<span>Back up<small>Download your list as a file</small></span></button>
+      <button data-m="import">📂<span>Restore from backup<small>Load a Modlist backup file</small></span></button>
+      <button data-m="about">ℹ️<span>How Modlist works</span></button>
+      <button data-m="wipe">🗑️<span>Erase everything<small>Removes all cars and mods from this browser</small></span></button>
+    </div><input type="file" id="m-file" accept=".json,application/json" hidden>`, (el, close) => {
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const a = b.dataset.m;
+      if (a === 'garage') { close(); garageSheet(); }
+      if (a === 'copy') {
+        const t = listAsText(); if (!t) { toast('Add a car first'); return; }
+        (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { toast('List copied'); close(); })
+          .catch(() => { close(); openSheet(`<h2>Your list<button class="icon x" data-close>✕</button></h2><textarea class="in" style="min-height:260px">${esc(t)}</textarea>`); });
+      }
+      if (a === 'export') {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+        const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+        link.download = 'modlist-backup-' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 4000); toast('Backup downloaded');
+      }
+      if (a === 'import') el.querySelector('#m-file').click();
+      if (a === 'about') { close(); aboutSheet(); }
+      if (a === 'wipe') {
+        if (!confirm('Erase all cars and mods from this browser? This can\'t be undone.')) return;
+        state = blank(); save(); close(); render();
+      }
+    });
+    el.querySelector('#m-file').addEventListener('change', ev => {
+      const f = ev.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const d = JSON.parse(r.result);
+          if (!d || !Array.isArray(d.mods) || !Array.isArray(d.cars)) throw 0;
+          if (!confirm(`Replace your current list with this backup (${d.cars.length} car${d.cars.length===1?'':'s'}, ${d.mods.length} mod${d.mods.length===1?'':'s'})?`)) return;
+          d.ui = Object.assign(blank().ui, d.ui || {}); state = d; save(); close(); render(); toast('Backup restored');
+        } catch(e) { toast('That file isn\'t a Modlist backup'); }
+      };
+      r.readAsText(f);
+    });
+  });
+}
+
+function aboutSheet(){
+  openSheet(`<h2>How Modlist works<button class="icon x" data-close aria-label="Close">✕</button></h2>
+    <p>Save the mods you want for each car, then decide what to buy first.</p>
+    <p><b>Prioritize</b> with the ▲▼ arrows in “My priority”, or sort by price, category, happiness rating, or best joy for the money.</p>
+    <p><b>Happiness rating</b> is how much you'll love the mod, 0–5 stars. The <b>gauge</b> compares that to the price: green is great joy for the money, yellow is fair, red is pricey for the joy. Mods you rate 4+ stars never land in the red.</p>
+    <p><b>Vendors:</b> add every place that sells the part. Your list and totals always use the lowest price.</p>
+    <p><b>Your data</b> stays in this browser on this device. Nothing is uploaded. Back up from the menu to move it to another phone or keep it safe.</p>
+    <p class="hint">On iPhone, tap Share → Add to Home Screen to open Modlist like an app.</p>`);
+}
+
+function loadSample(){
+  const car = { id: uid(), nickname:'Sample car', year:'2018', make:'BMW', model:'M2' };
+  const now = new Date().toISOString();
+  const mk = (name, cat, price, joy, vendor, offers, review) => ({
+    id: uid(), carId: car.id, name, url:'', vendor:{name:vendor, host:''}, price, addedPrice: price, category: cat, joy,
+    priority: 0, purchased:false, thumbUrl:'', reviewSummary: review || '', notes:'', offers: offers || [], addedAt: now
+  });
+  const mods = [
+    mk('Track brake pads, front', 'braking', 289, 4, 'Sample Vendor A', [{vendor:'Sample Vendor B', price:275, url:''}], 'Sample: strong bite and fade resistance; noisy on the street.'),
+    mk('Adjustable coilovers', 'handling', 2150, 5, 'Sample Vendor B'),
+    mk('High-temp brake fluid', 'braking', 45, 3, 'Sample Vendor A'),
+    mk('Oil cooler upgrade', 'durability', 649, 2, 'Sample Vendor C'),
+    mk('Carbon front lip', 'aero', 489, 4, 'Sample Vendor C'),
+    mk('Valve badge set', 'looks', 20, 1, 'Sample Vendor A'),
+  ];
+  mods.forEach((m,i) => m.priority = i);
+  state.cars.push(car); state.mods.push(...mods); state.carId = car.id; save(); render();
+  toast('Sample list loaded. Delete it any time in Garage');
+}
+
+// ---------- events ----------
+$('#carBtn').addEventListener('click', () => state.cars.length ? garageSheet() : carForm());
+$('#menuBtn').addEventListener('click', menuSheet);
+$('#addBtn').addEventListener('click', () => modForm());
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; state.ui.tab = b.dataset.tab; save(); render(); });
+$('#sort').addEventListener('change', e => { state.ui.sort = e.target.value; save(); render(); });
+$('#catFilter').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; state.ui.cat = (state.ui.cat === b.dataset.cat && b.dataset.cat !== 'all') ? 'all' : b.dataset.cat; save(); render(); });
+$('#list').addEventListener('click', e => {
+  const act = e.target.closest('[data-act]');
+  if (act) { if (act.dataset.act === 'addcar') carForm(); if (act.dataset.act === 'sample') loadSample(); return; }
+  const mv = e.target.closest('[data-move]');
+  const card = e.target.closest('.card');
+  if (!card) return;
+  if (mv) { e.stopPropagation(); move(card.dataset.id, +mv.dataset.move); return; }
+  modForm(state.mods.find(m => m.id === card.dataset.id));
+});
+window.addEventListener('storage', e => { if (e.key === KEY) { state = load() || blank(); render(); } });
+
+// probe storage
+try { localStorage.setItem(KEY + '.probe', '1'); localStorage.removeItem(KEY + '.probe'); } catch(e) { storageOk = false; }
+if (state.carId && !currentCar()) state.carId = state.cars[0] ? state.cars[0].id : null;
+renderBanner(); render();
+})();
+</script>
+</body>
+</html>
