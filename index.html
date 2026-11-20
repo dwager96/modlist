@@ -154,11 +154,15 @@ const CATS = [
   {id:'aero',       label:'Aero',       color:'#1fc7b6'},
   {id:'durability', label:'Durability', color:'#a3b86b'},
   {id:'looks',      label:'Visual',     color:'#b77dff'},
+  {id:'comfort',    label:'Comfort',    color:'#f2a7c3'},
+  {id:'safety',     label:'Safety',     color:'#ffd23d'},
 ];
 const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
 
 const CAT_KEYWORDS = {
-  braking:    ['brake','rotor','pad','caliper'],
+  safety:     ['harness','roll bar','roll cage','cage','extinguisher','helmet','hans','kill switch','fire suppression','tow strap','tow hook','belt'],
+  comfort:    ['cushion','armrest','sunshade','sun shade','cupholder','cup holder','sound deadening','insulation','floor mat','heated','lumbar'],
+  braking:   ['brake','rotor','pad','caliper'],
   handling:   ['coilover','spring','sway','tire','tyre','wheel','bushing'],
   power:      ['exhaust','intake','tune','turbo','intercooler','downpipe'],
   aero:       ['lip','splitter','wing','spoiler','diffuser','canard'],
